@@ -4,6 +4,8 @@ import math
 from nba_api.stats.endpoints import TeamYearByYearStats
 from nba_api.stats.endpoints import TeamEstimatedMetrics
 from nba_api.stats.static import teams
+import os.path
+from os import path
 
 class dataExtractor:
     # dates = [2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 
@@ -11,34 +13,40 @@ class dataExtractor:
     def __init__(self):
         self.dates = []
         self.main_df = pd.DataFrame()
+        self.getHistoricalData()
 
     def getHistoricalData(self):
         #Getting main dataframe
-        print("Starting")
-        allteams = teams.get_teams()
-        main_df = pd.DataFrame(columns=['TEAM_ID', 'TEAM_CITY', 'TEAM_NAME', 'YEAR', 'GP', 'WINS', 'LOSSES', 'WIN_PCT', 'CONF_RANK', 'DIV_RANK', 'PO_WINS', 'PO_LOSSES', 'CONF_COUNT', 'DIV_COUNT', 'NBA_FINALS_APPEARANCE', 
-                                        'FGM', 'FGA', 'FG_PCT', 'FG3M', 'FG3A', 'FG3_PCT', 'FTM', 'FTA', 'FT_PCT', 'OREB', 'DREB', 'REB', 'AST', 'PF', 'STL', 'TOV', 'BLK', 'PTS', 'PTS_RANK'])
+        if path.exists("HistoricalData.csv"):
+            self.main_df = self.loadDF()
+        else:
+            print("Starting")
+            allteams = teams.get_teams()
+            main_df = pd.DataFrame(columns=['TEAM_ID', 'TEAM_CITY', 'TEAM_NAME', 'YEAR', 'GP', 'WINS', 'LOSSES', 'WIN_PCT', 'CONF_RANK', 'DIV_RANK', 'PO_WINS', 'PO_LOSSES', 'CONF_COUNT', 'DIV_COUNT', 'NBA_FINALS_APPEARANCE', 
+                                            'FGM', 'FGA', 'FG_PCT', 'FG3M', 'FG3A', 'FG3_PCT', 'FTM', 'FTA', 'FT_PCT', 'OREB', 'DREB', 'REB', 'AST', 'PF', 'STL', 'TOV', 'BLK', 'PTS', 'PTS_RANK'])
 
-        for i in allteams:
-            teamID = i["id"]
-            teamStats = TeamYearByYearStats(team_id=teamID, league_id='00', season_type_all_star="Regular Season")
-            teamStats.get_request()
-            teamStats_df = teamStats.get_data_frames()[0]
-            main_df = pd.concat([main_df, teamStats_df])
+            # for i in allteams:
+            #     teamID = i["id"]
+            #     teamStats = TeamYearByYearStats(team_id=teamID, league_id='00', season_type_all_star="Regular Season")
+            #     teamStats.get_request()
+            #     teamStats_df = teamStats.get_data_frames()[0]
+            #     main_df = pd.concat([main_df, teamStats_df])
 
-        #Filtering by dates
-        self.setDates(main_df)
-        filter1 = main_df["YEAR"].isin(self.dates)
-        main_df[filter1]
+            main_df = pd.read_csv("NBATeamStats.csv")
 
-        print("Getting team details")
-        teamdeats_df = self.getTeamDetails()
+            #Filtering by dates
+            self.setDates(main_df)
+            filter1 = main_df["YEAR"].isin(self.dates).to_list()
+            main_df = main_df.loc[filter1]
 
-        print("Joining")
-        main_df["key"] = main_df["YEAR"] + main_df["TEAM_ID"].astype('str')
-        teamdeats_df["key"] = teamdeats_df["YEAR"] + teamdeats_df["TEAM_ID"]
-        main_df.set_index('key').join(teamdeats_df.set_index('key'), how='inner')
-        self.main_df = main_df
+            print("Getting team details")
+            teamdeats_df = pd.read_csv("teamdeets.csv")
+
+            print("Joining")
+            main_df["key"] = main_df["YEAR"] + main_df["TEAM_ID"].astype('str')
+            teamdeats_df["key"] = teamdeats_df["YEAR"] + teamdeats_df["TEAM_ID"].astype('str')
+            merge_main_df = main_df.set_index('key').merge(teamdeats_df.set_index('key'), on='key', left_index=False)
+            self.main_df = merge_main_df
 
         
 
@@ -57,19 +65,22 @@ class dataExtractor:
     
     def setDates(self, df):
         dates = list(pd.unique(df['YEAR']))
-        self.dates = dates[len(dates)-21:]
+        dates.sort()
+        self.dates = dates[len(dates)-21:len(dates)-1]
     
     def printDF(self):
-        print(self.main_df.head())
+        print(self.main_df.info())
     
     def getDataframe(self):
         return self.main_df
-
-
-DE = dataExtractor()
-DE.getHistoricalData()
-DE.printDF()
-
+    
+    def writeDF(self):
+        self.main_df.to_csv("HistoricalData.csv")
+        self.main_df.to_json("HistoricalData.json")
+    
+    def loadDF(self):
+        main_df = pd.read_csv("HistoricalData.csv")
+        return main_df
 
 
 
