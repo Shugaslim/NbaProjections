@@ -17,7 +17,7 @@ class dataExtractor:
 
     def getHistoricalData(self):
         #Getting main dataframe
-        if path.exists("HistoricalData.csv"):
+        if path.exists("NbaProjections/HistoricalData.csv"):
             self.main_df = self.loadDF()
         else:
             print("Starting")
@@ -32,7 +32,7 @@ class dataExtractor:
             #     teamStats_df = teamStats.get_data_frames()[0]
             #     main_df = pd.concat([main_df, teamStats_df])
 
-            main_df = pd.read_csv("NBATeamStats.csv")
+            main_df = pd.read_csv("NbaProjections/NBATeamStats.csv")
 
             #Filtering by dates
             self.setDates(main_df)
@@ -79,7 +79,7 @@ class dataExtractor:
         self.main_df.to_json("HistoricalData.json")
     
     def loadDF(self):
-        main_df = pd.read_csv("HistoricalData.csv")
+        main_df = pd.read_csv("NbaProjections/HistoricalData.csv")
         return main_df
 
 
