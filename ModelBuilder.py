@@ -2,6 +2,7 @@ import CollectData
 import FeatureExtractor
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
+from sklearn.model_selection import cross_val_score
 # import tensorflow as tf
 # from keras.utils import FeatureSpace
 # import keras.models
@@ -20,10 +21,10 @@ class ModelBuilder:
 
         self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(self.X, self.y, test_size=0.33, random_state=42)
 
-        self.BuildModel(self.df)
+        self.BuildModel()
     
-    def BuildModel(self, fs):
-        self.t_model = RandomForestClassifier(n_estimators=500, max_depth=2, random_state=0)
+    def BuildModel(self):
+        self.t_model = RandomForestClassifier(n_estimators=1000, max_depth=7, random_state=0)
     
     def getSummary(self):
         self.t_model.summary()
@@ -33,11 +34,6 @@ class ModelBuilder:
     
     def eval(self):
         return self.t_model.score(self.X_test, self.y_test)
-        
-
-m = ModelBuilder()
-m.train()
-print(m.eval())
 
         
 

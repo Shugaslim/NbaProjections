@@ -5,13 +5,14 @@ import numpy as np
 import pandas as pd
 
 class FeatureExtractor:
-    def __init__(self, df):
-        self.df = df
+    def __init__(self, DE):
+        self.curr = DE.getCurrent()
+        self.df = DE.getDataframe()
         self.res = df[["key", "NBA_FINALS_APPEARANCE", "CONF_RANK"]]
         self.makeOutput()
         self.cleanData()
         self.extract()
-        self.df = self.df.sample(frac=1)
+        self.features = None
 
 
     def extract(self):
@@ -20,6 +21,7 @@ class FeatureExtractor:
         selk = SelectKBest(f_regression, k=20)
         X_new = selk.fit_transform(X, y)
         col = selk.get_feature_names_out()
+        self.features = col
         new_df = pd.DataFrame(columns=col, data=X_new)
         new_df["y"] = y
         self.df = new_df

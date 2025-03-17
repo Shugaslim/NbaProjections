@@ -1,8 +1,10 @@
 import csv
 import pandas as pd
 import math
+import datetime
 from nba_api.stats.endpoints import TeamYearByYearStats
 from nba_api.stats.endpoints import TeamEstimatedMetrics
+from nba_api.stats.endpoints import LeagueDashTeamStats
 from nba_api.stats.static import teams
 import os.path
 from os import path
@@ -12,8 +14,30 @@ class dataExtractor:
     #             2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022]
     def __init__(self):
         self.dates = []
+        current_datetime = datetime.datetime.now()
+        self.current_year = current_datetime.year - 1
         self.main_df = pd.DataFrame()
+        self.current_df = pd.DataFrame()
         self.getHistoricalData()
+        self.getCurrentData()
+
+    def getCurrentData(self):
+        if path.exists("NbaProjections/CurrentNBA.csv"):
+            self.current_df = self.loadCurrent()
+        else:
+            l_stat = LeagueDashTeamStats()
+            l_stat.get_request()
+            main_df = l_stat.get_data_frames()[0]     
+            deets = self.getTeamDetails(True)
+            merge_main_df = main_df.set_index('TEAM_ID').merge(deets.set_index('TEAM_ID'), on='TEAM_ID', left_index=False)
+            self.current_df = merge_main_df
+            self.writeCurr()
+            
+
+
+    def getSeasonGameData(self):
+        return ''
+
 
     def getHistoricalData(self):
         #Getting main dataframe
@@ -51,17 +75,22 @@ class dataExtractor:
         
 
     
-    def getTeamDetails(self):
+    def getTeamDetails(self, isCur):
         teamdets_Main = pd.DataFrame(columns=['TEAM_NAME', 'TEAM_ID', 'GP', 'W', 'L', 'W_PCT', 'MIN', 'E_OFF_RATING', 'E_DEF_RATING', 'E_NET_RATING', 'E_PACE', 'E_AST_RATIO', 'E_OREB_PCT', 'E_DREB_PCT', 
-                                              'E_REB_PCT', 'E_TM_TOV_PCT', 'GP_RANK', 'W_RANK', 'L_RANK', 'W_PCT_RANK', 'MIN_RANK', 'E_OFF_RATING_RANK', 'E_DEF_RATING_RANK', 'E_NET_RATING_RANK', 'E_AST_RATIO_RANK', 'E_OREB_PCT_RANK', 'E_DREB_PCT_RANK', 'E_REB_PCT_RANK', 'E_TM_TOV_PCT_RANK', 'E_PACE_RANK'])
-        for i in self.dates:
-            teamdets = TeamEstimatedMetrics(season=str(i))
-            teamdets.get_request()
-            teamdets_df = teamdets.get_data_frames()[0]
-            teamdets_df['YEAR'] = [i for x in range(len(teamdets_df['TEAM_NAME']))]
+                                            'E_REB_PCT', 'E_TM_TOV_PCT', 'GP_RANK', 'W_RANK', 'L_RANK', 'W_PCT_RANK', 'MIN_RANK', 'E_OFF_RATING_RANK', 'E_DEF_RATING_RANK', 'E_NET_RATING_RANK', 'E_AST_RATIO_RANK', 'E_OREB_PCT_RANK', 'E_DREB_PCT_RANK', 'E_REB_PCT_RANK', 'E_TM_TOV_PCT_RANK', 'E_PACE_RANK'])
+        if isCur:
+            teamdets = TeamEstimatedMetrics()
+            teamdets_df = teamdets.team_estimated_metrics.get_data_frame()
             teamdets_Main = pd.concat([teamdets_Main, teamdets_df])
+        else:
+            for i in self.dates:
+                teamdets = TeamEstimatedMetrics(season=str(i))
+                teamdets_df = teamdets.get_data_frames()[0]
+                teamdets_df['YEAR'] = [i for x in range(len(teamdets_df['TEAM_NAME']))]
+                teamdets_Main = pd.concat([teamdets_Main, teamdets_df])
         
         return teamdets_Main
+
     
     def setDates(self, df):
         dates = list(pd.unique(df['YEAR']))
@@ -71,19 +100,34 @@ class dataExtractor:
     def printDF(self):
         print(self.main_df.info())
     
+    def printCurrentData(self):
+        print(self.current_df.info())
+    
     def getDataframe(self):
         return self.main_df
+    
+    def getCurrent(self):
+        return self.current_df
     
     def writeDF(self):
         self.main_df.to_csv("HistoricalData.csv")
         self.main_df.to_json("HistoricalData.json")
     
+    def writeCurr(self):
+        self.current_df.to_csv("CurrentNBA.csv")
+        self.current_df.to_json("CurrentNBA.json")
+    
     def loadDF(self):
         main_df = pd.read_csv("NbaProjections/HistoricalData.csv")
         return main_df
 
+    def loadCurrent(self):
+        df = pd.read_csv("NbaProjections/CurrentNBA.csv")
+        return df
 
 
+De = dataExtractor()
+De.printCurrentData()
 
 
 
