@@ -126,8 +126,5 @@ class dataExtractor:
         return df
 
 
-De = dataExtractor()
-De.printCurrentData()
-
 
 

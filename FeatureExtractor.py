@@ -8,12 +8,19 @@ class FeatureExtractor:
     def __init__(self, DE):
         self.curr = DE.getCurrent()
         self.df = DE.getDataframe()
-        self.res = df[["key", "NBA_FINALS_APPEARANCE", "CONF_RANK"]]
+        self.res = self.df[["key", "NBA_FINALS_APPEARANCE", "CONF_RANK"]]
+        self.features = None
         self.makeOutput()
         self.cleanData()
         self.extract()
-        self.features = None
+        for i in self.features:
+            if i not in self.curr.columns[0]:
+                print(i)
+        self.changeCurr()
 
+    def changeCurr(self):
+        self.curr = self.curr[self.features]
+    
 
     def extract(self):
         X = self.df
@@ -56,6 +63,9 @@ class FeatureExtractor:
 
     def getDf(self):
         return self.df
+    
+    def getCurr(self):
+        return self.curr
 
 
 
